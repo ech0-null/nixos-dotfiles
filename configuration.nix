@@ -83,14 +83,28 @@
   programs.firefox.enable = true;
   programs.vim.enable = true;
   programs.git.enable = true;
+  programs.niri.enable = true;
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-    curl # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    curl
     wget
     alacritty
+    fuzzel
+    waybar
+    mako
+    swaybg
+    kdePackages.polkit-kde-agent-1
+    xwayland-satellite
+    wl-clipboard
   ];
+
+  xdg.portal = {
+    enable = true;  
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    config.common.default = "*";
+  };
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
