@@ -1,62 +1,54 @@
 {
-    description = "My NixOS Configuration";
+    description = "My NixOS Configuration powered by flake-parts";
 
-    # DEPENDENCIES
     inputs = {
-        nixpkgs.url = "nixpkgs/nixos-26.05";
+        nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
+        
+        flake-parts.url = "github:hercules-ci/flake-parts";
 
         home-manager = {
             url = "github:nix-community/home-manager/release-26.05";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+
+        nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
+        import-tree.url = "github:denful/import-tree";
     };
 
-    # OUTPUTS
-    outputs = { self, nixpkgs, home-manager, ... }@inputs: {
-	
-	# HOST CONFIGURATIONS
-	nixosConfigurations = {
+    outputs = inputs@{ flake-parts, ... }: flake-parts.lib.mkFlake { inherit inputs; } {
       
-      	    "nixos-btw" = nixpkgs.lib.nixosSystem {
-                system = "x86_64-linux";
-                specialArgs = { inherit inputs; }; 
-                modules = [
-                    ./hosts/nixos-btw/hardware-configuration.nix
-                    ./hosts/nixos-btw/configuration.nix
-                    home-manager.nixosModules.home-manager
+        systems = [ "x86_64-linux" ];
 
-					{
-	            		home-manager = {
-	             			useGlobalPkgs = true;
-		            		useUserPackages = true;
-		            		backupFileExtension = "backup";
-			            	extraSpecialArgs = { inherit inputs; };
-					              
-		                	users.sasha = import ./users/sasha/home.nix; 
-			            };
-		          	}
-                ];
-      	    };
-
-      	    "work" = nixpkgs.lib.nixosSystem {
-				system = "x86_64-linux";
-		        specialArgs = { inherit inputs; }; 
-		        modules = [
-		          	./hosts/work/hardware-configuration.nix
-		          	./hosts/work/configuration.nix
-		          	home-manager.nixosModules.home-manager
-		          	{
-	       	          	home-manager = {
-					      	useGlobalPkgs = true;
-		              	  	useUserPackages = true;
-		              	  	backupFileExtension = "backup";
-		          	  	  	extraSpecialArgs = { inherit inputs; };
-		          					              
-         		      	  	users.ryuna = import ./users/ryuna/home.nix; 
-         			  	};
-        		  	}
-		        ];
-    	    };
+        flake = 
+        let
+            mkHost = import ./lib/mkHost.nix { inherit inputs; };
+        in 
+        {
+            nixosConfigurations = {
+                "nixos-btw" = mkHost { hostName = "nixos-btw"; userName = "sasha"; };
+                "work" = mkHost { hostName = "work"; userName = "ryuna"; };
+            };
         };
     };
 }
+
+# GOAL:
+#nixos-dotfiles/
+#├── flake.nix
+#├── hosts/
+#│   ├── nixos-btw/
+#│   │   ├── default.nix
+#│   │   └── hardware-configuration.nix
+#│   └── work/
+#│       ├── default.nix
+#│       └── hardware-configuration.nix
+#└── modules/
+#    ├── core/
+#    │   └── default.nix
+#    └── desktop/
+#        ├── budgie/
+#        │   ├── default.nix
+#        │   └── autostart.sh
+#        └── terminal/
+#            ├── default.nix
+#            └── alacritty.toml # Native Alacritty config
